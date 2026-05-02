@@ -3,8 +3,8 @@
 
 Vagrant.configure("2") do |config|
   
-  # Use Ubuntu 22.04 LTS
-  config.vm.box = "ubuntu/jammy64"
+  # Use debian/bullseye64 as the base box for both VMs
+  config.vm.box = "debian/bullseye64"
   config.vm.box_check_update = false
 
   config.vm.provider "virtualbox" do |vb|
