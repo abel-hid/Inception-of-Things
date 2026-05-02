@@ -1,0 +1,77 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+  
+  # Use Ubuntu 22.04 LTS
+  config.vm.box = "ubuntu/jammy64"
+  config.vm.box_check_update = false
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.cpus = 1
+    vb.memory = 1024
+  end
+
+
+  config.vm.define "abel-hidS" do |server|
+    server.vm.hostname = "abel-hidS"
+    server.vm.network "private_network", ip: "192.168.56.110"
+    
+    server.vm.provider "virtualbox" do |vb|
+      vb.name = "abel-hidS"
+    end
+
+    server.vm.provision "shell", inline: <<-SHELL
+    
+      apt-get update -y
+      apt-get install -y curl
+
+
+      curl -sfL https://get.k3s.io | sh -
+
+      sleep 30
+
+      # Make kubeconfig readable for vagrant user
+      chmod 644 /etc/rancher/k3s/k3s.yaml
+      
+      # Set KUBECONFIG for vagrant user
+      echo 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' >> /home/vagrant/.bashrc
+      echo "alias k='kubectl'" >> /home/vagrant/.bashrc
+
+      cp /var/lib/rancher/k3s/server/node-token /vagrant/node-token
+      chmod 644 /vagrant/node-token
+
+      echo "✅ K3s CONTROLLER installed on abel-hidS"
+      echo "✅ Node token saved to /vagrant/node-token"
+    SHELL
+  end
+
+  config.vm.define "abel-hidSW" do |worker|
+    worker.vm.hostname = "abel-hidSW"
+    worker.vm.network "private_network", ip: "192.168.56.111"
+    
+    worker.vm.provider "virtualbox" do |vb|
+      vb.name = "abel-hidSW"
+    end
+
+    worker.vm.provision "shell", inline: <<-SHELL
+      apt-get update -y
+      apt-get install -y curl
+
+
+      echo "⏳ Waiting for node token from controller..."
+      while [ ! -f /vagrant/node-token ]; do
+        echo "⏳ Waiting for node token..."
+        sleep 2
+      done
+
+      NODE_TOKEN=$(cat /vagrant/node-token)
+      echo "✅ Node token received: $NODE_TOKEN"
+
+      echo "⏳ Installing K3s AGENT and connecting to controller..."
+      curl -sfL https://get.k3s.io | K3S_URL=https://192.168.56.110:6443 K3S_TOKEN=${NODE_TOKEN} sh -
+
+      echo "✅ K3s AGENT installed on abel-hidSW and connected to controller"
+    SHELL
+  end
+end
