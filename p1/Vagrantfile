@@ -3,7 +3,6 @@
 
 Vagrant.configure("2") do |config|
   
-  # Use debian/bullseye64 as the base box for both VMs
   config.vm.box = "debian/bullseye64"
   config.vm.box_check_update = false
 
@@ -31,18 +30,12 @@ Vagrant.configure("2") do |config|
 
       sleep 30
 
-      # Make kubeconfig readable for vagrant user
       chmod 644 /etc/rancher/k3s/k3s.yaml
-      
-      # Set KUBECONFIG for vagrant user
-      echo 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' >> /home/vagrant/.bashrc
+
       echo "alias k='kubectl'" >> /home/vagrant/.bashrc
 
       cp /var/lib/rancher/k3s/server/node-token /vagrant/node-token
       chmod 644 /vagrant/node-token
-
-      echo "✅ K3s CONTROLLER installed on abel-hidS"
-      echo "✅ Node token saved to /vagrant/node-token"
     SHELL
   end
 
@@ -58,20 +51,15 @@ Vagrant.configure("2") do |config|
       apt-get update -y
       apt-get install -y curl
 
-
-      echo "⏳ Waiting for node token from controller..."
       while [ ! -f /vagrant/node-token ]; do
-        echo "⏳ Waiting for node token..."
         sleep 2
       done
 
       NODE_TOKEN=$(cat /vagrant/node-token)
-      echo "✅ Node token received: $NODE_TOKEN"
 
       echo "⏳ Installing K3s AGENT and connecting to controller..."
       curl -sfL https://get.k3s.io | K3S_URL=https://192.168.56.110:6443 K3S_TOKEN=${NODE_TOKEN} sh -
 
-      echo "✅ K3s AGENT installed on abel-hidSW and connected to controller"
     SHELL
   end
 end
