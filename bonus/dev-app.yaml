@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bel-idri-app
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bel-idri-app
+  template:
+    metadata:
+      labels:
+        app: bel-idri-app
+    spec:
+      containers:
+        - name: bel-idri
+          image: wil42/playground:v1
+          ports:
+            - containerPort: 8888
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bel-idri-service
+  namespace: dev
+spec:
+  selector:
+    app: bel-idri-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8888
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bel-idri-ingress
+  namespace: dev
+spec:
+  rules:
+    - host: app.127.0.0.1.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bel-idri-service
+                port:
+                  number: 80
