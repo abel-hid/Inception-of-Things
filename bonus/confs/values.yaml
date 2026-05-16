@@ -1,0 +1,17 @@
+global:
+  edition: ce
+
+  hosts:
+    domain: localhost
+    externalIP: 127.0.0.1
+    https: false
+
+    gitlab:
+      name: gitlab.localhost
+      https: false
+
+  ingress:
+    configureCertmanager: false
+    class: nginx
+    tls:
+      enabled: false

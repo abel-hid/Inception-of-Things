@@ -7,7 +7,7 @@ spec:
   project: default
 
   source:
-    repoURL: http://gitlab.gitlab.svc.cluster.local:8929/root/bel-idri.git
+    repoURL: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/root/abel-hid.git
     targetRevision: main
     path: .
 
