@@ -53,35 +53,6 @@ wait_for_gitlab() {
 
   kubectl -n gitlab wait --for=condition=complete "$MIGRATION_JOB" --timeout=1800s
 
-  echo "=== Waiting for GitLab webservice ==="
-
-  WEB_DEPLOY="$(kubectl -n gitlab get deploy -o name | grep 'gitlab-webservice-default' | head -n 1 || true)"
-
-  if [ -z "$WEB_DEPLOY" ]; then
-    echo "ERROR: GitLab webservice deployment was not found."
-    kubectl get deploy -n gitlab
-    exit 1
-  fi
-
-  kubectl -n gitlab rollout status "$WEB_DEPLOY" --timeout=1800s
-
-  echo "=== Waiting until GitLab HTTP answers ==="
-
-  for i in {1..120}; do
-    CODE="$(curl -sS -o /dev/null -w '%{http_code}' -H "Host: $GITLAB_HOST" "http://127.0.0.1:$GITLAB_PORT/users/sign_in" || true)"
-
-    if [[ "$CODE" == "200" || "$CODE" == "302" ]]; then
-      echo "GitLab is ready. HTTP status: $CODE"
-      return 0
-    fi
-
-    echo "GitLab not ready yet. HTTP status: ${CODE:-none}. Attempt $i/120"
-    sleep 10
-  done
-
-  echo "ERROR: GitLab did not become ready."
-  kubectl get pods -n gitlab
-  exit 1
 }
 
 check_gitlab_installed() {
@@ -240,6 +211,7 @@ else
     --create-namespace \
     -f "$VALUES_FILE" \
     --timeout 30m \
+    --version 9.10.1 \
     --set gitlab.webservice.minReplicas=1 \
     --set gitlab.webservice.maxReplicas=1 \
     --set gitlab.sidekiq.minReplicas=1 \
